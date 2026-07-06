@@ -77,7 +77,7 @@ export default function HeroSection() {
         </div>
 
         {/* Hero Content */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 px-6 sm:px-8 md:px-10 lg:px-12 pb-6 sm:pb-8 md:pb-10">
+        <div className="absolute left-0 right-0 z-10 px-6 sm:px-8 md:px-10 lg:px-12 pb-6 sm:pb-8 md:pb-10 bottom-auto md:bottom-0 top-28 md:top-auto">
           <div className="grid grid-cols-12 gap-4 items-end">
             <div className="col-span-12 md:col-span-8">
               <h1
