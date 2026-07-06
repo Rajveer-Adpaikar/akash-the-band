@@ -23,9 +23,6 @@ export default function HeroSection() {
   return (
     <section className="h-dvh p-0 md:p-6">
       <div className="relative h-full w-full md:rounded-2xl md:rounded-[2rem] overflow-hidden bg-black">
-        {/* Transparent overlay to block YouTube touch UI (title, controls on mobile) */}
-        <div className="absolute inset-0 z-[5]" />
-
         {/* YouTube iframe background */}
         <div className="absolute inset-0 w-full h-full">
           <iframe
@@ -42,6 +39,9 @@ export default function HeroSection() {
 
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none" />
+
+        {/* Transparent overlay to block YouTube touch UI (title, controls on mobile) */}
+        <div className="absolute inset-0 z-[5]" />
 
         {/* Mute/Unmute button */}
         <button
@@ -77,7 +77,7 @@ export default function HeroSection() {
         </div>
 
         {/* Hero Content */}
-        <div className="absolute bottom-0 left-0 right-0 px-6 sm:px-8 md:px-10 lg:px-12 pb-6 sm:pb-8 md:pb-10">
+        <div className="absolute bottom-0 left-0 right-0 z-10 px-6 sm:px-8 md:px-10 lg:px-12 pb-6 sm:pb-8 md:pb-10">
           <div className="grid grid-cols-12 gap-4 items-end">
             <div className="col-span-12 md:col-span-8">
               <h1
