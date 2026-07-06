@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import { ArrowRight, Volume2, VolumeX } from 'lucide-react';
 import WordsPullUp from './WordsPullUp';
 
@@ -14,34 +14,26 @@ function postToPlayer(ref: React.RefObject<HTMLIFrameElement | null>, func: stri
 export default function HeroSection() {
   const [muted, setMuted] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const iosKey = useRef(0);
-  const [, forceRender] = useState(0);
 
-  const toggleMute = useCallback(() => {
-    if (isIOS) {
-      // iOS Safari: postMessage is unreliable. Recreate iframe inside user
-      // gesture so Safari allows autoplay-with-sound on the new iframe.
-      iosKey.current++;
-      forceRender((n) => n + 1);
-    } else {
-      postToPlayer(iframeRef, muted ? 'unMute' : 'mute');
-    }
+  const toggleMute = () => {
+    postToPlayer(iframeRef, muted ? 'unMute' : 'mute');
     setMuted((m) => !m);
-  }, [muted, isIOS]);
+  };
 
   return (
-    <section className="h-screen p-4 md:p-6">
-      <div className="relative h-full w-full rounded-2xl md:rounded-[2rem] overflow-hidden bg-black">
+    <section className="h-dvh p-0 md:p-6">
+      <div className="relative h-full w-full md:rounded-2xl md:rounded-[2rem] overflow-hidden bg-black">
+        {/* Transparent overlay to block YouTube touch UI (title, controls on mobile) */}
+        <div className="absolute inset-0 z-[5]" />
+
         {/* YouTube iframe background */}
         <div className="absolute inset-0 w-full h-full">
           <iframe
-            key={isIOS ? iosKey.current : undefined}
-            ref={!isIOS ? iframeRef : undefined}
-            src={`https://www.youtube.com/embed/Eomk8ivqQSA?autoplay=1&loop=1&playlist=Eomk8ivqQSA&controls=0&modestbranding=1&rel=0&playsinline=1&mute=${muted ? 1 : 0}&enablejsapi=${isIOS ? 0 : 1}`}
+            ref={iframeRef}
+            src="https://www.youtube.com/embed/Eomk8ivqQSA?autoplay=1&loop=1&playlist=Eomk8ivqQSA&controls=0&modestbranding=1&rel=0&playsinline=1&mute=1&enablejsapi=1"
             className="absolute top-1/2 left-1/2 w-full min-w-full h-full min-h-full -translate-x-1/2 -translate-y-1/2 md:w-[177.78vh] md:h-[56.25vw] pointer-events-none"
             allow="autoplay; encrypted-media"
-            title="Sapna Jahan - Akash Mangeshkar Cover"
+            title=""
           />
         </div>
 
