@@ -27,7 +27,7 @@ export default function AboutSection() {
   const opacity = useTransform(scrollYProgress, [0, 1], [0.2, 1]);
 
   return (
-    <section className="bg-black px-4 sm:px-6 md:px-8 py-16 sm:py-20 md:py-28" id="about">
+    <section className="bg-black px-4 sm:px-6 md:px-8 py-4 sm:py-20 md:py-28" id="about">
       <div className="bg-[#101010] rounded-3xl sm:rounded-[2rem] px-6 sm:px-10 md:px-16 py-12 sm:py-16 md:py-20 max-w-6xl mx-auto text-center">
         {/* Label */}
         <p className="text-white/80 text-[10px] sm:text-xs uppercase tracking-widest mb-6 sm:mb-8 md:mb-10">
