@@ -2,27 +2,21 @@ import { useState, useRef, useCallback } from 'react';
 import { ArrowRight, Volume2, VolumeX } from 'lucide-react';
 import InquiryModal from './InquiryModal';
 
-function postToStreamable(ref: React.RefObject<HTMLIFrameElement | null>, cmd: string) {
-  try {
-    ref.current?.contentWindow?.postMessage(
-      JSON.stringify({ type: 'player', command: cmd }),
-      '*'
-    );
-  } catch {}
-}
-
 export default function HeroSection() {
   const [muted, setMuted] = useState(true);
   const [showInquiry, setShowInquiry] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [src] = useState(
-    'https://streamable.com/e/fb392i?autoplay=1&muted=1&controls=0&loop=0'
-  );
 
   const toggleMute = useCallback(() => {
-    postToStreamable(iframeRef, muted ? 'unmute' : 'mute');
-    setMuted((m) => !m);
-  }, [muted]);
+    setMuted((m) => {
+      const next = !m;
+      // Reload iframe with new mute state (Streamable doesn't support postMessage)
+      if (iframeRef.current) {
+        iframeRef.current.src = `https://streamable.com/e/fb392i?autoplay=1&muted=${next ? 1 : 0}&controls=0`;
+      }
+      return next;
+    });
+  }, []);
 
   return (
     <section>
@@ -31,8 +25,8 @@ export default function HeroSection() {
         <div className="absolute inset-0 w-full h-full">
           <iframe
             ref={iframeRef}
-            src={src}
-            className="absolute inset-0 w-full h-full pointer-events-none"
+            src="https://streamable.com/e/fb392i?autoplay=1&muted=1"
+            className="absolute top-1/2 left-1/2 w-full min-w-full h-full min-h-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"
             allow="autoplay; fullscreen"
             title=""
           />
