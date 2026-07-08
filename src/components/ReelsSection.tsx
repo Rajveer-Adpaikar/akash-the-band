@@ -13,40 +13,15 @@ const REELS = [
 export default function ReelsSection() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const playersRef = useRef<Map<string, any>>(new Map());
+  const activeIdRef = useRef<string | null>(null);
   const [muted, setMuted] = useState(true);
-  const [visibleId, setVisibleId] = useState<string | null>(null);
-
-  // Observer to track which reel is in view
-  useEffect(() => {
-    const players = playersRef.current;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const id = entry.target.getAttribute('data-reel-id');
-          if (!id) return;
-          const player = players.get(id);
-          if (!player) return;
-          if (entry.isIntersecting) {
-            setVisibleId(id);
-            player.play();
-          } else if (visibleId === id) {
-            player.pause();
-          }
-        });
-      },
-      { threshold: 0.6 }
-    );
-
-    const cards = scrollRef.current?.querySelectorAll('[data-reel-id]');
-    cards?.forEach((el) => obs.observe(el));
-
-    return () => obs.disconnect();
-  }, [visibleId]);
 
   // Init Vimeo players on mount
   useEffect(() => {
     const players = playersRef.current;
     const cards = scrollRef.current?.querySelectorAll('[data-reel-id]');
+    let readyCount = 0;
+    const total = cards?.length || 0;
     cards?.forEach((el) => {
       const id = el.getAttribute('data-reel-id');
       if (!id || players.has(id)) return;
@@ -54,17 +29,87 @@ export default function ReelsSection() {
       if (!iframe) return;
       const player = new (window as any).Vimeo.Player(iframe);
       player.ready().then(() => {
-        player.setVolume(0);
+        player.setVolume(0).then(() => player.pause());
         players.set(id, player);
+        readyCount++;
+        // Once all players ready, play the first one that's in view
+        if (readyCount === total) {
+          const first = scrollRef.current?.querySelector('[data-reel-id]');
+          const fid = first?.getAttribute('data-reel-id');
+          if (fid && players.has(fid)) {
+            const rect = first!.getBoundingClientRect();
+            const sw = scrollRef.current!;
+            const sRect = sw.getBoundingClientRect();
+            if (rect.left >= sRect.left && rect.right <= sRect.right) {
+              players.get(fid).play();
+              activeIdRef.current = fid;
+            }
+          }
+        }
       });
     });
     return () => { players.forEach((p: any) => p.destroy()); players.clear(); };
   }, []);
 
+  // Scroll-based active detection
+  useEffect(() => {
+    const sw = scrollRef.current;
+    if (!sw) return;
+    const players = playersRef.current;
+
+    const check = () => {
+      const cards = sw.querySelectorAll<HTMLElement>('[data-reel-id]');
+      let bestId: string | null = null;
+      let bestDist = Infinity;
+      const swCenter = sw.scrollLeft + sw.clientWidth / 2;
+
+      cards.forEach((el) => {
+        const id = el.getAttribute('data-reel-id');
+        if (!id) return;
+        const elCenter = el.offsetLeft + el.offsetWidth / 2;
+        const dist = Math.abs(swCenter - elCenter);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestId = id;
+        }
+      });
+
+      if (bestId && bestId !== activeIdRef.current) {
+        // Pause previous
+        if (activeIdRef.current && players.has(activeIdRef.current)) {
+          players.get(activeIdRef.current).pause();
+        }
+        // Play new
+        if (players.has(bestId)) {
+          players.get(bestId).play();
+        }
+        activeIdRef.current = bestId;
+      }
+    };
+
+    // Initial check
+    setTimeout(check, 500);
+
+    sw.addEventListener('scroll', check, { passive: true });
+    return () => sw.removeEventListener('scroll', check);
+  }, []);
+
+  // Listen for global mute events (from hero)
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      const nextMuted = e.detail.muted;
+      playersRef.current.forEach((p: any) => p.setVolume(nextMuted ? 0 : 0.7));
+      setMuted(nextMuted);
+    };
+    window.addEventListener('global-mute' as any, handler as any);
+    return () => window.removeEventListener('global-mute' as any, handler as any);
+  }, []);
+
   const toggleMute = useCallback(() => {
     setMuted((m) => {
       const next = !m;
-      playersRef.current.forEach((p: any) => p.setVolume(next ? 0.7 : 0));
+      playersRef.current.forEach((p: any) => p.setVolume(next ? 0 : 0.7));
+      window.dispatchEvent(new CustomEvent('global-mute', { detail: { muted: next } }));
       return next;
     });
   }, []);
@@ -92,7 +137,7 @@ export default function ReelsSection() {
               >
                 <div style={{ padding: '177.78% 0 0 0', position: 'relative' }}>
                   <iframe
-                    src={`https://player.vimeo.com/video/${id}?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1&muted=1&loop=1&controls=0&title=0&byline=0&portrait=0&background=1`}
+                    src={`https://player.vimeo.com/video/${id}?badge=0&autopause=0&player_id=0&app_id=58479&muted=1&loop=1&controls=0&title=0&byline=0&portrait=0&background=1`}
                     allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
                     style={{
                       position: 'absolute',
