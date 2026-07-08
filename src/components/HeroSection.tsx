@@ -12,7 +12,9 @@ export default function HeroSection() {
     if (!wrapperRef.current || playerRef.current) return;
     const iframe = wrapperRef.current.querySelector('iframe');
     if (!iframe) return;
-    playerRef.current = new (window as any).Vimeo.Player(iframe);
+    const player = new (window as any).Vimeo.Player(iframe);
+    player.ready().then(() => player.setCurrentTime(1));
+    playerRef.current = player;
   }, []);
 
   const toggleMute = useCallback(() => {
