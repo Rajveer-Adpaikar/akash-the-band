@@ -101,7 +101,7 @@ export default function HeroSection() {
       </div>
 
       {/* Text + CTA below video — mobile only */}
-      <div className="block md:hidden max-w-6xl mx-auto px-6 py-4">
+      <div className="block md:hidden max-w-6xl mx-auto px-6 py-0">
         <p className="text-white text-sm leading-relaxed mb-6">
           Goa&apos;s premier Bollywood ensemble — a 6-piece band bringing
           high-energy live performances, romantic covers, and unforgettable
