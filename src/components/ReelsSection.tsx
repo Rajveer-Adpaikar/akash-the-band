@@ -115,10 +115,24 @@ export default function ReelsSection() {
     return () => { sw.removeEventListener('scroll', check); };
   }, []);
 
+  // Listen: when hero unmutes, auto-mute reels
+  useEffect(() => {
+    const handler = () => {
+      playersRef.current.forEach((p: any) => p.setVolume(0));
+      setMuted(true);
+    };
+    window.addEventListener('mute-reels' as any, handler as any);
+    return () => window.removeEventListener('mute-reels' as any, handler as any);
+  }, []);
+
   const toggleMute = useCallback(() => {
     setMuted((m) => {
       const next = !m;
       playersRef.current.forEach((p: any) => p.setVolume(next ? 0 : 0.7));
+      if (!next) {
+        // Reels unmuted → mute hero
+        window.dispatchEvent(new CustomEvent('mute-hero'));
+      }
       return next;
     });
   }, []);

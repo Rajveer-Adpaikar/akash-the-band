@@ -17,6 +17,18 @@ export default function HeroSection() {
     playerRef.current = player;
   }, []);
 
+  // Listen: when reels unmute, auto-mute hero
+  useEffect(() => {
+    const handler = () => {
+      const player = playerRef.current;
+      if (!player) return;
+      player.setVolume(0);
+      setMuted(true);
+    };
+    window.addEventListener('mute-hero' as any, handler as any);
+    return () => window.removeEventListener('mute-hero' as any, handler as any);
+  }, []);
+
   const toggleMute = useCallback(() => {
     const player = playerRef.current;
     if (!player) return;
@@ -25,6 +37,8 @@ export default function HeroSection() {
       player.setVolume(0);
     } else {
       player.setVolume(0.7);
+      // Hero unmuted → mute reels
+      window.dispatchEvent(new CustomEvent('mute-reels'));
     }
     setMuted(nextMuted);
   }, [muted]);
