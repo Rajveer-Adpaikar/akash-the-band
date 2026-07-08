@@ -45,7 +45,7 @@ export default function HeroSection() {
 
   return (
     <section>
-      <div className="relative h-[50vh] md:h-dvh w-full p-0 md:p-6 md:rounded-2xl md:rounded-[2rem] overflow-hidden bg-black">
+      <div className="relative h-[40vh] md:h-dvh w-full p-0 md:p-6 md:rounded-2xl md:rounded-[2rem] overflow-hidden bg-black">
         {/* Vimeo iframe background */}
         <div className="absolute inset-0 w-full h-full" ref={wrapperRef}>
           <div className="absolute inset-0">
