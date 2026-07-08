@@ -34,14 +34,10 @@ export default function ReelsSection() {
     if (!iframe || iframe.src.includes('vimeo.com')) return;
     iframe.src = `https://player.vimeo.com/video/${id}?badge=0&autopause=0&player_id=0&app_id=58479&muted=1&loop=1&controls=0&title=0&byline=0&portrait=0&background=1`;
     initPlayer(iframe).then((player) => {
-      player.setVolume(0)
-        .then(() => player.pause())
-        .then(() => {
-          if (id === '1208158886') return player.setCurrentTime(1);
-        })
-        .then(() => {
-          players.set(id, player);
-        });
+      players.set(id, player);
+      // Pause and seek fire in background — player is already usable
+      player.setVolume(0).then(() => player.pause());
+      if (id === '1208158886') player.setCurrentTime(1);
     });
   }, []);
 
