@@ -30,23 +30,28 @@ export default function ReelsSection() {
       if (!iframe) return;
       const player = new (window as any).Vimeo.Player(iframe);
       player.ready().then(() => {
-        player.setVolume(0).then(() => player.pause());
-        players.set(id, player);
-        readyCount++;
-        // Once all players ready, play the first one that's in view
-        if (readyCount === total) {
-          const first = scrollRef.current?.querySelector('[data-reel-id]');
-          const fid = first?.getAttribute('data-reel-id');
-          if (fid && players.has(fid)) {
-            const rect = first!.getBoundingClientRect();
-            const sw = scrollRef.current!;
-            const sRect = sw.getBoundingClientRect();
-            if (rect.left >= sRect.left && rect.right <= sRect.right) {
-              players.get(fid).play();
-              activeIdRef.current = fid;
+        player.setVolume(0)
+          .then(() => player.pause())
+          .then(() => {
+            if (id === '1208158886') return player.setCurrentTime(1);
+          })
+          .then(() => {
+            players.set(id, player);
+            readyCount++;
+            if (readyCount === total) {
+              const first = scrollRef.current?.querySelector('[data-reel-id]');
+              const fid = first?.getAttribute('data-reel-id');
+              if (fid && players.has(fid)) {
+                const rect = first!.getBoundingClientRect();
+                const sw = scrollRef.current!;
+                const sRect = sw.getBoundingClientRect();
+                if (rect.left >= sRect.left && rect.right <= sRect.right) {
+                  players.get(fid).play();
+                  activeIdRef.current = fid;
+                }
+              }
             }
-          }
-        }
+          });
       });
     });
     return () => { players.forEach((p: any) => p.destroy()); players.clear(); };
@@ -62,12 +67,14 @@ export default function ReelsSection() {
       const cards = sw.querySelectorAll<HTMLElement>('[data-reel-id]');
       let bestId: string | null = null;
       let bestDist = Infinity;
-      const swCenter = sw.scrollLeft + sw.clientWidth / 2;
+      const swRect = sw.getBoundingClientRect();
+      const swCenter = swRect.left + swRect.width / 2;
 
       cards.forEach((el) => {
         const id = el.getAttribute('data-reel-id');
         if (!id) return;
-        const elCenter = el.offsetLeft + el.offsetWidth / 2;
+        const elRect = el.getBoundingClientRect();
+        const elCenter = elRect.left + elRect.width / 2;
         const dist = Math.abs(swCenter - elCenter);
         if (dist < bestDist) {
           bestDist = dist;
@@ -88,29 +95,30 @@ export default function ReelsSection() {
       }
     };
 
-    // Initial check
-    setTimeout(check, 500);
+    // Initial check with retry if players not ready yet
+    let attempts = 0;
+    const initialCheck = () => {
+      const allCards = sw.querySelectorAll<HTMLElement>('[data-reel-id]');
+      const anyPlayerReady = Array.from(allCards).some(
+        (el) => players.has(el.getAttribute('data-reel-id') || '')
+      );
+      if (anyPlayerReady || attempts > 10) {
+        check();
+      } else {
+        attempts++;
+        setTimeout(initialCheck, 300);
+      }
+    };
+    setTimeout(initialCheck, 500);
 
     sw.addEventListener('scroll', check, { passive: true });
-    return () => sw.removeEventListener('scroll', check);
-  }, []);
-
-  // Listen for global mute events (from hero)
-  useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      const nextMuted = e.detail.muted;
-      playersRef.current.forEach((p: any) => p.setVolume(nextMuted ? 0 : 0.7));
-      setMuted(nextMuted);
-    };
-    window.addEventListener('global-mute' as any, handler as any);
-    return () => window.removeEventListener('global-mute' as any, handler as any);
+    return () => { sw.removeEventListener('scroll', check); };
   }, []);
 
   const toggleMute = useCallback(() => {
     setMuted((m) => {
       const next = !m;
       playersRef.current.forEach((p: any) => p.setVolume(next ? 0 : 0.7));
-      window.dispatchEvent(new CustomEvent('global-mute', { detail: { muted: next } }));
       return next;
     });
   }, []);

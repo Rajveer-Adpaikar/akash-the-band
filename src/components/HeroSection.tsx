@@ -17,19 +17,6 @@ export default function HeroSection() {
     playerRef.current = player;
   }, []);
 
-  // Listen for global mute events (from reels)
-  useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      const nextMuted = e.detail.muted;
-      const player = playerRef.current;
-      if (!player) return;
-      player.setVolume(nextMuted ? 0 : 0.7);
-      setMuted(nextMuted);
-    };
-    window.addEventListener('global-mute' as any, handler as any);
-    return () => window.removeEventListener('global-mute' as any, handler as any);
-  }, []);
-
   const toggleMute = useCallback(() => {
     const player = playerRef.current;
     if (!player) return;
@@ -40,7 +27,6 @@ export default function HeroSection() {
       player.setVolume(0.7);
     }
     setMuted(nextMuted);
-    window.dispatchEvent(new CustomEvent('global-mute', { detail: { muted: nextMuted } }));
   }, [muted]);
 
   return (
