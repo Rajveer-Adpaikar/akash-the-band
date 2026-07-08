@@ -28,38 +28,52 @@ export default function AboutSection() {
 
   return (
     <section className="bg-black px-4 sm:px-6 md:px-8 py-1 sm:py-20 md:py-28" id="about">
-      <div className="bg-[#101010] rounded-3xl sm:rounded-[2rem] px-6 sm:px-10 md:px-16 py-12 sm:py-16 md:py-20 max-w-6xl mx-auto text-center">
+      <div className="bg-[#101010] rounded-3xl sm:rounded-[2rem] px-6 sm:px-10 md:px-16 py-12 sm:py-16 md:py-20 max-w-6xl mx-auto">
         {/* Label */}
-        <p className="text-white/80 text-[10px] sm:text-xs uppercase tracking-widest mb-6 sm:mb-8 md:mb-10">
+        <p className="text-white/80 text-[10px] sm:text-xs uppercase tracking-widest mb-8 sm:mb-10 md:mb-12">
           Frontman — Akash The Band
         </p>
 
-        {/* Multi-style heading */}
-        <div className="max-w-3xl mx-auto">
-          <WordsPullUpMultiStyle
-            segments={aboutSegments}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl leading-[0.95] sm:leading-[0.9]"
-            delay={0.1}
-          />
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
+          {/* Image */}
+          <div className="w-full">
+            <img
+              src="/akash-portrait.jpg"
+              alt="Akash Mangeshkar"
+              className="w-full h-auto rounded-2xl object-cover"
+            />
+          </div>
 
-        {/* Spacer */}
-        <div className="h-8 sm:h-10 md:h-12" />
+          {/* Text */}
+          <div>
+            {/* Multi-style heading */}
+            <div className="max-w-3xl">
+              <WordsPullUpMultiStyle
+                segments={aboutSegments}
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl leading-[0.95] sm:leading-[0.9] text-left"
+                delay={0.1}
+              />
+            </div>
 
-        {/* Body - scroll-animated characters */}
-        <div ref={ref} className="relative max-w-2xl mx-auto">
-          <p
-            className="text-xs sm:text-sm md:text-base text-[#DEDBC8] leading-relaxed"
-            style={{ opacity: 0.2 }}
-          >
-            {bodyText}
-          </p>
-          <motion.p
-            className="absolute inset-0 text-xs sm:text-sm md:text-base text-[#DEDBC8] leading-relaxed"
-            style={{ opacity }}
-          >
-            {bodyText}
-          </motion.p>
+            {/* Spacer */}
+            <div className="h-8 sm:h-10 md:h-12" />
+
+            {/* Body - scroll-animated characters */}
+            <div ref={ref} className="relative max-w-2xl">
+              <p
+                className="text-xs sm:text-sm md:text-base text-[#DEDBC8] leading-relaxed text-left"
+                style={{ opacity: 0.2 }}
+              >
+                {bodyText}
+              </p>
+              <motion.p
+                className="absolute inset-0 text-xs sm:text-sm md:text-base text-[#DEDBC8] leading-relaxed text-left"
+                style={{ opacity }}
+              >
+                {bodyText}
+              </motion.p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
