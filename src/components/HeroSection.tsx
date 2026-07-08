@@ -90,11 +90,16 @@ export default function HeroSection() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10">
           <div className="bg-black rounded-b-2xl md:rounded-b-3xl px-4 py-2 md:px-8">
             <div className="flex items-center gap-3 sm:gap-6 md:gap-12 lg:gap-14">
-              {['About', 'Services', 'Projects', 'Contact'].map(
+              {[
+                { label: 'About', href: '#about' },
+                { label: 'Events', href: '#reels' },
+                { label: 'Services', href: '#services' },
+                { label: 'Contact', href: '#contact' },
+              ].map(
                 (item) => (
                   <a
-                    key={item}
-                    href={`#${item.toLowerCase()}`}
+                    key={item.label}
+                    href={item.href}
                     className="text-[10px] sm:text-xs md:text-sm whitespace-nowrap transition-colors duration-200"
                     style={{ color: 'rgba(225, 224, 204, 0.8)' }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = '#E1E0CC')}
@@ -102,7 +107,7 @@ export default function HeroSection() {
                       (e.currentTarget.style.color = 'rgba(225, 224, 204, 0.8)')
                     }
                   >
-                    {item}
+                    {item.label}
                   </a>
                 )
               )}
