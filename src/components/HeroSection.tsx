@@ -76,9 +76,11 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Hero Content */}
-        <div className="absolute left-0 right-0 z-10 px-6 sm:px-8 md:px-10 lg:px-12 pb-6 sm:pb-8 md:pb-10 bottom-auto md:bottom-0 top-28 md:top-auto">
-          <div className="grid grid-cols-12 gap-4 items-end">
+        {/* Hero Content — Akash heading (upper area) */}
+        <div
+          className="absolute left-0 right-0 z-10 px-6 sm:px-8 md:px-10 lg:px-12 top-24 md:top-[22vh]"
+        >
+          <div className="grid grid-cols-12">
             <div className="col-span-12 md:col-span-8">
               <h1
                 className="font-display font-medium leading-[0.85] tracking-[-0.07em] text-[#E1E0CC] relative inline-block"
@@ -92,14 +94,20 @@ export default function HeroSection() {
                 />
               </h1>
             </div>
+          </div>
+        </div>
 
-            <div className="col-span-12 md:col-span-4 pl-0 md:pl-4">
+        {/* Hero Content — Description + CTA (lower area) */}
+        <div className="absolute left-0 right-0 z-10 px-6 sm:px-8 md:px-10 lg:px-12 bottom-6 sm:bottom-8 md:bottom-12 pb-2 sm:pb-2">
+          <div className="grid grid-cols-12 gap-4 items-end">
+            <div className="col-span-12 md:col-span-4 md:col-start-9">
               <p
                 className="text-white text-xs sm:text-sm md:text-base leading-[1.2] mb-4 sm:mb-6 drop-shadow-md"
                 style={{ animation: 'fadeUp 0.6s 0.5s both' }}
               >
-                Goa&apos;s voice. India&apos;s stage. — A 6-piece Bollywood ensemble
-                turning luxury weddings &amp; corporate events into unforgettable performances.
+                Goa&apos;s premier Bollywood ensemble — a 6-piece band bringing
+                high-energy live performances, romantic covers, and unforgettable
+                entertainment to destination weddings and corporate events across India.
               </p>
 
               <a
