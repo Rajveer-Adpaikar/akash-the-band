@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import { Volume2, VolumeX, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const REELS = [
-  { vimeo: '1208158925', instagram: 'https://www.instagram.com/reel/DX9Zme3sYPV/' },
+  { vimeo: '1208819326', instagram: 'https://www.instagram.com/reel/DX9Zme3sYPV/' },
   { vimeo: '1208158917', instagram: 'https://www.instagram.com/reel/DTzWuQPDDwR/' },
   { vimeo: '1208158916', instagram: 'https://www.instagram.com/reel/DZC7xYMSejP/' },
   { vimeo: '1208158881', instagram: 'https://www.instagram.com/reel/DVlh_pwj-PQ/' },
