@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://rajveer-adpaikar.github.io/akash-the-band/sitemap.xml
