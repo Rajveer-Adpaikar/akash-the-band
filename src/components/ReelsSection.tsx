@@ -20,7 +20,6 @@ const FIRST_REAL = 1;
 const LAST_REAL = NUM_REALS;          // 7
 const CLONE_FIRST = NUM_REALS + 1;    // 8
 const SNAP_MS = 350;
-const EAGER_SLOTS = new Set([CLONE_LAST, FIRST_REAL, FIRST_REAL + 1, LAST_REAL]);
 
 interface PlayerResult {
   id: string;
@@ -110,33 +109,43 @@ export default function ReelsSection() {
     });
   }, []);
 
-  // Eagerly init reels 1, 2, 7 (and the clone-of-last) on mount
+  // Init reel 1 immediately; after it loads, chain reels 2 & 7, then lazy rest
   useEffect(() => {
     const cards = outerRef.current?.querySelectorAll<HTMLElement>('[data-player-key]');
-    cards?.forEach((el, i) => {
-      if (!EAGER_SLOTS.has(i)) return;
-      const check = () => {
-        if ((window as any).Vimeo?.Player) {
-          startPlayer(el);
-        } else {
-          requestAnimationFrame(check);
-        }
-      };
-      check();
-    });
+    if (!cards || !cards[FIRST_REAL]) return;
 
-    cards?.forEach((el, i) => {
-      if (EAGER_SLOTS.has(i)) return;
-      setTimeout(() => {
-        const checkSDK = () => {
-          if ((window as any).Vimeo?.Player) {
-            startPlayer(el);
-          } else {
-            requestAnimationFrame(checkSDK);
-          }
-        };
-        checkSDK();
-      }, i * 500);
+    const waitVimeo = (fn: () => void) => {
+      if ((window as any).Vimeo?.Player) fn();
+      else requestAnimationFrame(() => waitVimeo(fn));
+    };
+
+    waitVimeo(() => {
+      const el1 = cards[FIRST_REAL];
+      const key1 = el1.getAttribute('data-player-key')!;
+
+      // Init reel 1 directly — get the promise
+      initReelPlayer(el1).then((result) => {
+        if (result) {
+          playersRef.current.set(key1, result.player);
+          setReadyIds((prev) => new Set(prev).add(key1));
+        } else {
+          setFailedIds((prev) => new Set(prev).add(key1));
+        }
+
+        // Reel 1 is done — now init reels 2 and 7
+        [FIRST_REAL + 1, LAST_REAL].forEach((i) => {
+          const el = cards[i];
+          if (el) startPlayer(el);
+        });
+
+        // Lazy init the rest (clone-of-last + 3..6) with stagger
+        cards.forEach((el, i) => {
+          if (i === FIRST_REAL || i === FIRST_REAL + 1 || i === LAST_REAL) return;
+          setTimeout(() => {
+            waitVimeo(() => startPlayer(el));
+          }, i * 500);
+        });
+      });
     });
   }, [startPlayer]);
 
