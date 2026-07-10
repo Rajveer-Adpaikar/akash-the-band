@@ -92,7 +92,6 @@ export default function ReelsSection() {
   const activeKeyRef = useRef<string | null>(null);
   const slotRef = useRef(FIRST_REAL);
   const movingRef = useRef(false);
-  const touchStartX = useRef(0);
   const seenRef = useRef(false);
   const [muted, setMuted] = useState(true);
   const [readyIds, setReadyIds] = useState<Set<string>>(new Set());
@@ -284,22 +283,6 @@ export default function ReelsSection() {
   const scrollLeft = useCallback(() => navigate(-1), [navigate]);
   const scrollRight = useCallback(() => navigate(1), [navigate]);
 
-  // ── Touch swipe ────────────────────────────────────────────
-
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length !== 1) return;
-    touchStartX.current = e.touches[0].clientX;
-  }, []);
-  const onTouchMove = useCallback((e: React.TouchEvent) => {
-    const dx = Math.abs(e.touches[0].clientX - touchStartX.current);
-    if (dx > 20) e.preventDefault();
-  }, []);
-  const onTouchEnd = useCallback((e: React.TouchEvent) => {
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(dx) < 30) return;
-    navigate(dx > 0 ? -1 : 1);
-  }, [navigate]);
-
   // ── Render ─────────────────────────────────────────────────
 
   const slots = buildSlots();
@@ -310,7 +293,7 @@ export default function ReelsSection() {
         <h2 className="font-display text-primary text-xl sm:text-2xl md:text-3xl text-center mb-2" style={{ textWrap: 'balance' }}>
           Event Reels
         </h2>
-        <p className="text-white/40 text-xs text-center mb-6 sm:mb-8">Tap arrows or swipe to browse</p>
+        <p className="text-white/40 text-xs text-center mb-6 sm:mb-8">Tap arrows to browse</p>
 
         <div className="relative flex justify-center">
           <button
@@ -321,14 +304,11 @@ export default function ReelsSection() {
             <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
           </button>
 
-          <div ref={outerRef} className="overflow-hidden max-w-full w-full touch-none">
+          <div ref={outerRef} className="overflow-hidden max-w-full w-full">
             <div
               ref={trayRef}
               className="flex gap-3 sm:gap-4"
               style={{ willChange: 'transform' }}
-              onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
-              onTouchEnd={onTouchEnd}
             >
             {slots.map((s) => {
               const loaded = readyIds.has(s.key);
