@@ -7,8 +7,8 @@ const REELS = [
   { vimeo: '1208158916', instagram: 'https://www.instagram.com/reel/DZC7xYMSejP/' },
   { vimeo: '1208158881', instagram: 'https://www.instagram.com/reel/DVlh_pwj-PQ/' },
   { vimeo: '1208158886', instagram: 'https://www.instagram.com/reel/DaVXSECMIhq/' },
-  { vimeo: '1208819327' },
   { vimeo: '1208819325' },
+  { vimeo: '1208819327' },
 ];
 
 const LOAD_RETRIES = 2;
