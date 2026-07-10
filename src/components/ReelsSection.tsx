@@ -7,7 +7,7 @@ const REELS = [
   { vimeo: '1208158916', instagram: 'https://www.instagram.com/reel/DZC7xYMSejP/' },
   { vimeo: '1208158881', instagram: 'https://www.instagram.com/reel/DVlh_pwj-PQ/' },
   { vimeo: '1208158886', instagram: 'https://www.instagram.com/reel/DaVXSECMIhq/' },
-  { vimeo: '1208158884', instagram: 'https://www.instagram.com/reel/DTu73e9jKsg/' },
+  { vimeo: '1208819327' },
   { vimeo: '1208158883', instagram: 'https://www.instagram.com/reel/DTUx2xBDNxD/' },
 ];
 
