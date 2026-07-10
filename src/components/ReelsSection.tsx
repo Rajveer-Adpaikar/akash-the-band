@@ -11,58 +11,55 @@ const REELS = [
   '1208158883',
 ];
 
+const NUM_REALS = REELS.length;         // 7
+const CLONE_LAST = 0;
+const FIRST_REAL = 1;
+const LAST_REAL = NUM_REALS;            // 7
+const CLONE_FIRST = NUM_REALS + 1;      // 8
+
 export default function ReelsSection() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const playersRef = useRef<Map<string, any>>(new Map());
   const activeIdRef = useRef<string | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
+  const slotRef = useRef(FIRST_REAL);
+  const transitioningRef = useRef(false);
+  const touchStartX = useRef(0);
   const [muted, setMuted] = useState(true);
   const [readyIds, setReadyIds] = useState<Set<string>>(new Set());
 
-  const scrollTo = useCallback((dir: 'prev' | 'next') => {
-    const sw = scrollRef.current;
-    if (!sw) return;
-    const cards = sw.querySelectorAll<HTMLElement>('[data-reel-id]');
-    if (!cards.length) return;
-    const swRect = sw.getBoundingClientRect();
-    const swCenter = swRect.left + swRect.width / 2;
-    // Find which card is currently at center
-    let bestIdx = 0;
-    let bestDist = Infinity;
-    cards.forEach((el, i) => {
-      const r = el.getBoundingClientRect();
-      const d = Math.abs(swCenter - (r.left + r.width / 2));
-      if (d < bestDist) { bestDist = d; bestIdx = i; }
-    });
-    const target = dir === 'next'
-      ? Math.min(bestIdx + 1, cards.length - 1)
-      : Math.max(bestIdx - 1, 0);
-    cards[target].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  // ── Slot data ──────────────────────────────────────────────
+  const getSlots = useCallback(() => {
+    const slots: { id: string; key: string }[] = [];
+    slots.push({ id: REELS[NUM_REALS - 1], key: `${REELS[NUM_REALS - 1]}-clone-end` });
+    for (let i = 0; i < NUM_REALS; i++) slots.push({ id: REELS[i], key: REELS[i] });
+    slots.push({ id: REELS[0], key: `${REELS[0]}-clone-start` });
+    return slots;
   }, []);
 
-  // Init player for an individual reel
+  // ── Player init ────────────────────────────────────────────
   const initOne = useCallback((el: Element) => {
     const players = playersRef.current;
+    const key = el.getAttribute('data-player-key');
+    if (!key || players.has(key)) return;
     const id = el.getAttribute('data-reel-id');
-    if (!id || players.has(id)) return;
+    if (!id) return;
     const iframe = el.querySelector<HTMLIFrameElement>('iframe');
     if (!iframe || iframe.src.includes('vimeo.com')) return;
+
     iframe.src = `https://player.vimeo.com/video/${id}?badge=0&autopause=0&player_id=0&app_id=58479&muted=1&loop=1&controls=0&title=0&byline=0&portrait=0&background=1`;
     const player = new (window as any).Vimeo.Player(iframe);
     player.ready().then(() => {
-      players.set(id, player);
-      setReadyIds((prev) => new Set(prev).add(id));
+      players.set(key, player);
+      setReadyIds((prev) => new Set(prev).add(key));
       player.setVolume(0).then(() => player.pause());
       if (id === '1208158886') player.setCurrentTime(1);
     });
   }, []);
 
-  // On mount: init first 2 reels immediately; lazy-load rest when section is near
+  // Lazy init: first 2 immediately, rest on section intersect
   useEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return;
-
-    const cards = scrollRef.current?.querySelectorAll('[data-reel-id]');
+    const cards = scrollRef.current?.querySelectorAll('[data-player-key]');
     cards?.forEach((el, i) => { if (i < 2) initOne(el); });
 
     const obs = new IntersectionObserver(
@@ -74,76 +71,103 @@ export default function ReelsSection() {
       },
       { threshold: 0.1 }
     );
-    obs.observe(section);
+    if (sectionRef.current) obs.observe(sectionRef.current);
     return () => obs.disconnect();
   }, [initOne]);
 
-  // Reactively play the center reel whenever a new player becomes ready
-  useEffect(() => {
-    const players = playersRef.current;
-    const sw = scrollRef.current;
-    if (!sw || players.size === 0) return;
-
-    const cards = sw.querySelectorAll<HTMLElement>('[data-reel-id]');
-    let bestId: string | null = null;
-    let bestDist = Infinity;
-    const swRect = sw.getBoundingClientRect();
-    const swCenter = swRect.left + swRect.width / 2;
-
-    cards.forEach((el) => {
-      const id = el.getAttribute('data-reel-id');
-      if (!id || !players.has(id)) return;
-      const elRect = el.getBoundingClientRect();
-      const elCenter = elRect.left + elRect.width / 2;
-      const dist = Math.abs(swCenter - elCenter);
-      if (dist < bestDist) { bestDist = dist; bestId = id; }
-    });
-
-    if (bestId && bestId !== activeIdRef.current) {
-      if (activeIdRef.current && players.has(activeIdRef.current)) {
-        players.get(activeIdRef.current).pause();
-      }
-      players.get(bestId).play();
-      activeIdRef.current = bestId;
-    }
-  }, [readyIds]);
-
-  // Scroll-based active detection
-  useEffect(() => {
+  // ── Programmatic scroll (no free-scroll) ──────────────────
+  const goToSlot = useCallback((slot: number, behavior: ScrollBehavior) => {
     const sw = scrollRef.current;
     if (!sw) return;
-    const players = playersRef.current;
-
-    const check = () => {
-      const cards = sw.querySelectorAll<HTMLElement>('[data-reel-id]');
-      let bestId: string | null = null;
-      let bestDist = Infinity;
-      const swRect = sw.getBoundingClientRect();
-      const swCenter = swRect.left + swRect.width / 2;
-
-      cards.forEach((el) => {
-        const id = el.getAttribute('data-reel-id');
-        if (!id) return;
-        const elRect = el.getBoundingClientRect();
-        const elCenter = elRect.left + elRect.width / 2;
-        const dist = Math.abs(swCenter - elCenter);
-        if (dist < bestDist) { bestDist = dist; bestId = id; }
-      });
-
-      if (bestId && players.has(bestId) && bestId !== activeIdRef.current) {
-        if (activeIdRef.current && players.has(activeIdRef.current)) {
-          players.get(activeIdRef.current).pause();
-        }
-        players.get(bestId).play();
-        activeIdRef.current = bestId;
-      }
-    };
-
-    sw.addEventListener('scroll', check, { passive: true });
-    return () => sw.removeEventListener('scroll', check);
+    const cards = sw.querySelectorAll<HTMLElement>('[data-player-key]');
+    const target = cards[slot] as HTMLElement | undefined;
+    if (!target) return;
+    const swW = sw.offsetWidth;
+    const targetCx = target.offsetLeft + target.offsetWidth / 2;
+    sw.scrollTo({ left: targetCx - swW / 2, behavior });
   }, []);
 
-  // Listen: when hero unmutes, auto-mute reels
+  // ── Navigation ─────────────────────────────────────────────
+  const activateByDelta = useCallback((dir: 'prev' | 'next') => {
+    if (transitioningRef.current) return;
+    transitioningRef.current = true;
+
+    const next = dir === 'next'
+      ? Math.min(CLONE_FIRST, slotRef.current + 1)
+      : Math.max(CLONE_LAST, slotRef.current - 1);
+
+    slotRef.current = next;
+    goToSlot(next, 'smooth');
+
+    // On animation complete: snap-wrap if on a clone, then sync player
+    const done = () => {
+      const s = slotRef.current;
+      const slots = getSlots();
+
+      if (s === CLONE_LAST || s === CLONE_FIRST) {
+        // ── Phase 1 complete: user saw smooth slide onto clone ──
+        // ── Phase 2: silent snap to real slot ────────────────
+        const realSlot = s === CLONE_LAST ? LAST_REAL : FIRST_REAL;
+
+        // Pause clone player (visible during phase 1)
+        const cloneKey = slots[s].key;
+        playersRef.current.get(cloneKey)?.pause();
+
+        // Instant snap — visually identical position
+        goToSlot(realSlot, 'auto');
+        slotRef.current = realSlot;
+
+        // Resume real counterpart
+        const realKey = slots[realSlot].key;
+        const realPlayer = playersRef.current.get(realKey);
+        if (activeIdRef.current && playersRef.current.has(activeIdRef.current)) {
+          playersRef.current.get(activeIdRef.current)?.pause();
+        }
+        realPlayer?.play();
+        activeIdRef.current = realKey;
+      } else {
+        // Normal move: play the newly visible card
+        const key = slots[s].key;
+        const player = playersRef.current.get(key);
+        if (player && key !== activeIdRef.current) {
+          if (activeIdRef.current && playersRef.current.has(activeIdRef.current)) {
+            playersRef.current.get(activeIdRef.current)?.pause();
+          }
+          player.play();
+          activeIdRef.current = key;
+        }
+      }
+      transitioningRef.current = false;
+    };
+
+    // scrollend event + setTimeout fallback
+    const sw = scrollRef.current;
+    if (sw && 'onscrollend' in window) {
+      sw.addEventListener('scrollend', done, { once: true });
+    } else {
+      setTimeout(done, 400);
+    }
+  }, [goToSlot, getSlots]);
+
+  // ── Touch swipe (mobile) ──────────────────────────────────
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) > 40) {
+      activateByDelta(dx < 0 ? 'next' : 'prev');
+    }
+  }, [activateByDelta]);
+
+  // ── Initial position ──────────────────────────────────────
+  useEffect(() => {
+    const t = setTimeout(() => goToSlot(FIRST_REAL, 'auto'), 50);
+    return () => clearTimeout(t);
+  }, [goToSlot]);
+
+  // ── Reel → hero mute coherence ────────────────────────────
   useEffect(() => {
     const handler = () => {
       playersRef.current.forEach((p: any) => p.setVolume(0));
@@ -162,6 +186,9 @@ export default function ReelsSection() {
     });
   }, []);
 
+  // ── Render ─────────────────────────────────────────────────
+  const slots = getSlots();
+
   return (
     <section ref={sectionRef} className="bg-black px-4 sm:px-6 md:px-8 py-10 sm:py-16 md:py-20 overflow-hidden" id="reels">
       <div className="max-w-6xl mx-auto">
@@ -171,9 +198,8 @@ export default function ReelsSection() {
         <p className="text-white/40 text-xs text-center mb-6 sm:mb-8">Swipe to view more →</p>
 
         <div className="flex justify-center relative">
-          {/* Left arrow — desktop only */}
           <button
-            onClick={() => scrollTo('prev')}
+            onClick={() => activateByDelta('prev')}
             className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm items-center justify-center transition-all duration-200 -ml-5"
             aria-label="Previous reel"
           >
@@ -182,17 +208,20 @@ export default function ReelsSection() {
 
           <div
             ref={scrollRef}
-            className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin max-w-full"
-            style={{ scrollbarWidth: 'thin', scrollbarColor: '#333 transparent' }}
+            className="flex gap-3 sm:gap-4 overflow-x-hidden pb-4 max-w-full"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            style={{ scrollbarWidth: 'none' }}
           >
-            {REELS.map((id, i) => (
+            {slots.map((s) => (
               <div
-                key={id}
-                data-reel-id={id}
-                className="flex-shrink-0 w-[70vw] sm:w-[45vw] md:w-[30vw] lg:w-[22vw] snap-center rounded-2xl overflow-hidden bg-[#101010]"
+                key={s.key}
+                data-player-key={s.key}
+                data-reel-id={s.id}
+                className="flex-shrink-0 w-[70vw] sm:w-[45vw] md:w-[30vw] lg:w-[22vw] rounded-2xl overflow-hidden bg-[#101010]"
               >
                 <div className="relative w-full" style={{ paddingTop: '177.78%' }}>
-                  {!readyIds.has(id) && (
+                  {!readyIds.has(s.key) && (
                     <div className="absolute inset-0 flex items-center justify-center bg-[#181818] rounded-2xl z-10">
                       <div className="w-6 h-6 border-2 border-white/20 border-t-primary rounded-full animate-spin" />
                     </div>
@@ -200,16 +229,15 @@ export default function ReelsSection() {
                   <iframe
                     className="absolute inset-0 w-full h-full pointer-events-none"
                     allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
-                    title={`Reel ${i + 1}`}
+                    title={`Reel ${s.key}`}
                   />
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Right arrow — desktop only */}
           <button
-            onClick={() => scrollTo('next')}
+            onClick={() => activateByDelta('next')}
             className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm items-center justify-center transition-all duration-200 -mr-5"
             aria-label="Next reel"
           >
