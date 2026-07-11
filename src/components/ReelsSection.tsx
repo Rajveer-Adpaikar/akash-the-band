@@ -240,45 +240,38 @@ export default function ReelsSection() {
     if (movingRef.current) return;
     movingRef.current = true;
 
-    const nextSlot = Math.max(CLONE_LAST, Math.min(CLONE_FIRST, slotRef.current + dir));
-    if (nextSlot === slotRef.current) {
+    const current = slotRef.current;
+    const nextSlot = current + dir;
+    const slots = buildSlots();
+
+    // Wrap-around: instant teleport, no animation (avoids clone Vimeo flash)
+    if (nextSlot < FIRST_REAL || nextSlot > LAST_REAL) {
+      const target = dir === -1 ? LAST_REAL : FIRST_REAL;
+      snap(target, false);
+      if (activeKeyRef.current && playersRef.current.has(activeKeyRef.current)) {
+        playersRef.current.get(activeKeyRef.current)?.pause();
+      }
+      playersRef.current.get(slots[target].key)?.play();
+      activeKeyRef.current = slots[target].key;
       movingRef.current = false;
       return;
     }
 
-    const slots = buildSlots();
-
-    // Phase 1: smooth slide to target slot
+    // Normal: smooth slide to adjacent reel
     snap(nextSlot, true);
 
-    // Phase 2: on wrap, snap to real counterpart invisibly
     const onDone = () => {
       movingRef.current = false;
-      const s = slotRef.current;
-
-      if (s === CLONE_LAST || s === CLONE_FIRST) {
-        const realSlot = s === CLONE_LAST ? LAST_REAL : FIRST_REAL;
-        playersRef.current.get(slots[s].key)?.pause();
-        snap(realSlot, false);
-        const realKey = slots[realSlot].key;
+      const key = slots[nextSlot].key;
+      const player = playersRef.current.get(key);
+      if (player && key !== activeKeyRef.current) {
         if (activeKeyRef.current && playersRef.current.has(activeKeyRef.current)) {
           playersRef.current.get(activeKeyRef.current)?.pause();
         }
-        playersRef.current.get(realKey)?.play();
-        activeKeyRef.current = realKey;
-      } else {
-        const key = slots[s].key;
-        const player = playersRef.current.get(key);
-        if (player && key !== activeKeyRef.current) {
-          if (activeKeyRef.current && playersRef.current.has(activeKeyRef.current)) {
-            playersRef.current.get(activeKeyRef.current)?.pause();
-          }
-          player.play();
-          activeKeyRef.current = key;
-        }
+        player.play();
+        activeKeyRef.current = key;
       }
     };
-
     setTimeout(onDone, SNAP_MS + 50);
   }, [snap]);
 
